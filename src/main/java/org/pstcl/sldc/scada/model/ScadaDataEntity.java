@@ -1,18 +1,17 @@
 package org.pstcl.sldc.scada.model;
 
 import java.math.BigDecimal;
-import java.util.Date;
 import java.sql.Time;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -22,18 +21,27 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "scadadata4")
+@Table(name="scada_data_repo_demo")
 public class ScadaDataEntity {
 
+	public ScadaEntityId getEntityId() {
+		return entityId;
+	}
+	public void setEntityId(ScadaEntityId entityId) {
+		this.entityId = entityId;
+	}
 	@JsonIgnore
 	@EmbeddedId
-	 ScadaEntityId entityId;
+	private ScadaEntityId entityId;
 	
-    LocalDate dateS;
-	Time timeS;
+
+	@DateTimeFormat(pattern="yyyy-dd-MM HH:mm:ss")
+	private Date dateTimeWrongFormat;
+	
 	@Column(precision=20,scale=10)
-	BigDecimal value;
-	String flag;
+	private BigDecimal value;
+	
+	private String flag;
 	
 	
 	
@@ -53,22 +61,21 @@ public class ScadaDataEntity {
 	public void setPointID(String pointsID) {
 		entityId.setPointID(pointsID);
 	}
-	public String getDateTimeLocal() {
-		return entityId.getDateTimeLocal();
-	}
+	
 	
 	public LocalDate getDateS() {
-		return dateS;
+		return this.entityId.getDateS();
 	}
-	public void setDateS(LocalDate localDate) {
-		this.dateS = localDate;
+	public void setDateS(LocalDate dateS) {
+		this.entityId.setDateS(dateS);
 	}
-	public Time getTimeS() {
-		return timeS;
+	public LocalTime getTimeS() {
+		return this.entityId.getTimeS();
 	}
-	public void setTimeS(Time timeS) {
-		this.timeS = timeS;
+	public void setTimeS(LocalTime timeS) {
+		this.entityId.setTimeS(timeS);
 	}
+	
 	public BigDecimal getValue() {
 		return value;
 	}
@@ -81,9 +88,11 @@ public class ScadaDataEntity {
 	public void setFlag(String flag) {
 		this.flag = flag;
 	}
-	public void setDateTimeLocal(String s) {
-		// TODO Auto-generated method stub
-		entityId.setDateTimeLocal(s);
+	public Date getDateTimeWrongFormat() {
+		return dateTimeWrongFormat;
+	}
+	public void setDateTimeWrongFormat(Date dateTimeWrongFormat) {
+		this.dateTimeWrongFormat = dateTimeWrongFormat;
 	}
 
 	

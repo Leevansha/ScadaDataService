@@ -12,7 +12,9 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,6 +32,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.pstcl.sldc.scada.model.ScadaDataEntity;
 import org.pstcl.sldc.scada.repository.ScadaDataEntityRepository;
+import org.pstcl.sldc.scada.util.GlobalProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -38,31 +41,59 @@ import org.springframework.util.FileCopyUtils;
 @Service
 public class ExcelService {
 
+	@Autowired
+	private GlobalProperties globalProperties;
+
 
 	@Autowired
 	ScadaDataEntityRepository repository;
 
-	@Scheduled(fixedRate = 2*60*1000)
+	@Scheduled(fixedRate = 30*1000)
 	public void scheduleFixedRateTask() {
-       
+
 		File fileToRead=getFileCopy();
 		List<ScadaDataEntity> list;
 		
+		
+
 		list= readExcel(fileToRead);
+		//REMOVE THIS BLOCK BELOW
+		//REMOVE THIS BLOCK BELOW
+		//REMOVE THIS BLOCK BELOW
+		//REMOVE THIS BLOCK BELOW
+		for (ScadaDataEntity entity : list) {
+			
+			DateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+			
+			Date dateS = new Date(System.currentTimeMillis());
+			LocalDateTime localDateTime =convertToLocalDateTimeViaInstant(dateS);
+		       
+			entity.setDateS(localDateTime.toLocalDate());
+
+			entity.setTimeS(localDateTime.toLocalTime());
+			double random=(Math.random()/10) + .95;
+			entity.setValue(entity.getValue().multiply(new BigDecimal(random)));
+		}
+		//REMOVE THIS BLOCK ABOVE
+
+		//REMOVE THIS BLOCK ABOVE
+
+		//REMOVE THIS BLOCK ABOVE
+		
 		repository.saveAll(list);
 		deleteFile(fileToRead);
-		
-		for (ScadaDataEntity scadaEntity : list) {
-			System.out.println(scadaEntity);
-		}
+
+		//		for (ScadaDataEntity scadaEntity : list) {
+		//			System.out.println(globalProperties.getFileLocation()+""+globalProperties.getFileName());
+		//			
+		//		}
 	}
 
-	private static final String FILE_NAME = "C:\\Eclipse\\scadadata.xlsm";
 
 	private File getFileCopy()
 	{
-		File originalFile=new File(FILE_NAME);
-		String tempDirectoryName = "C:\\Eclipse\\Temp\\" ;
+		File originalFile=new File(globalProperties.getFileLocation()+globalProperties.getFileName());
+		String tempDirectoryName = globalProperties.getTempDirName() ;
 
 		File tempDirectory = new File(tempDirectoryName);
 
@@ -136,8 +167,8 @@ public class ExcelService {
 					{
 
 						int[] array={cell.getColumnIndex(),cell.getRowIndex()};
-						  
-						  map.put(cell.getRichStringCellValue().getString().trim(), array);
+
+						map.put(cell.getRichStringCellValue().getString().trim(), array);
 					}
 					if (cell.getRichStringCellValue().getString().trim().equals("Value")) 
 					{
@@ -154,7 +185,7 @@ public class ExcelService {
 				}
 			}
 		}
-	return map;
+		return map;
 
 	}
 
@@ -202,21 +233,32 @@ public class ExcelService {
 						{
 
 							DateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-							java.sql.Time timeValue = new java.sql.Time(formatter.parse(row.getCell(columnIndices.get("TimeS")[0]).getStringCellValue()).getTime());
-							entity.setTimeS(timeValue);
+							//java.sql.Time timeValue = new java.sql.Time(formatter.parse(row.getCell(columnIndices.get("TimeS")[0]).getStringCellValue()).getTime());
+							entity.setTimeS(LocalTime.parse(row.getCell(columnIndices.get("TimeS")[0]).getStringCellValue()));
 						}
 						if(null!=row.getCell(columnIndices.get("Time")[0]))
 						{
-									String s;
-									try {
-										s= row.getCell(columnIndices.get("Time")[0]).getDateCellValue().toString();
-										}
-										catch (Exception e) {
-											//date = formatter.parse(s);
-											s=row.getCell(columnIndices.get("Time")[0]).getStringCellValue();
-										}
-										
-							entity.setDateTimeLocal(s);
+
+							if(row.getCell(columnIndices.get("Time")[0]).getCellType()==CellType.NUMERIC)
+							{
+								entity.setDateTimeWrongFormat(row.getCell(columnIndices.get("Time")[0]).getDateCellValue());
+							}
+							//
+							//
+							////							DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm:ss");
+							//
+							//
+							////							row.getCell(columnIndices.get("Time")[0]).setCellType(CellType.STRING);
+							//							
+							//							String dateString;
+							//							try {
+							//								dateString= row.getCell(columnIndices.get("Time")[0]).getStringCellValue();
+							//
+							//							}
+							//							catch (Exception e) {
+							//								//date = formatter.parse(s);
+							//								dateString=row.getCell(columnIndices.get("Time")[0]).getStringCellValue();
+							//							}
 						}
 						if(null!=row.getCell(columnIndices.get("Value")[0]))
 						{
@@ -232,7 +274,7 @@ public class ExcelService {
 
 				}
 			}
- 
+
 			inputStream.close();
 			return list;
 		}
@@ -240,12 +282,16 @@ public class ExcelService {
 			e.printStackTrace();
 		}
 		return list;
-		
+
 
 	}
 
 
 
-
+	public LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
+		return dateToConvert.toInstant()
+				.atZone(ZoneId.systemDefault())
+				.toLocalDateTime();
+	}
 
 }
